@@ -12,6 +12,8 @@ type patient struct {
 	Name string `json:"name"`
 	Email string `json:"email"`
 	Cellphone string `json:"cellphone"`
+	Age string `json:"age"`
+	Weight string `json:"weight"`
 	Password string `json:"password"`
 }
 

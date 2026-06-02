@@ -68,6 +68,37 @@
             font-weight: 700;
             color: #111;
         }
+
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .patient-table th,
+        .patient-table td {
+            text-align: left;
+            padding: 0.85rem 1rem;
+        }
+
+        .patient-table th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid #eee;
+        }
+
+        .patient-table td {
+            font-size: 0.95rem;
+            color: #111;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .patient-table tr:hover td {
+            background: #fafafa;
+        }
     </style>
 </head>
 <body>
@@ -83,6 +114,42 @@
                 </svg>
             </a>
         </div>
+
+        <table class="patient-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Idade</th>
+                    <th>Celular</th>
+                    <th>E-mail</th>
+                </tr>
+            </thead>
+            <tbody id="patient-tbody">
+            </tbody>
+        </table>
     </div>
+
+    <script>
+       async function fetchPatients() {
+        const res = await fetch("http://localhost:8080/allPatients")
+        const patients = await res.json();
+
+        const tbody = document.getElementById("patient-tbody")
+        //clears any existing rows. 
+        tbody.innerHTML = ""
+
+        patients.forEach(function(p) {
+            const row = document.createElement("tr")
+            row.innerHTML = 
+            "<td>" + p.name + "</td>" +
+                "<td>" + p.age + "</td>" +
+                "<td>" + p.cellphone + "</td>" +
+                "<td>" + p.email + "</td>"
+            tbody.appendChild(row)
+        })
+       }
+
+       fetchPatients()
+    </script>
 </body>
 </html>

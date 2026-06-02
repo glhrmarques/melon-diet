@@ -14,7 +14,6 @@ type patient struct {
 	Cellphone string `json:"cellphone"`
 	Age string `json:"age"`
 	Weight string `json:"weight"`
-	Password string `json:"password"`
 }
 
 var patientList = []patient{

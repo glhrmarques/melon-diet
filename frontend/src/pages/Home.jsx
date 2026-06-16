@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 function Home() {
+  const navigate = useNavigate()
   const [patients, setPatients] = useState([])
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user')
+    if (!stored) {
+      navigate('/login')
+      return
+    }
+    setUser(JSON.parse(stored))
+  }, [navigate])
 
   useEffect(() => {
     fetch('/allPatients')
@@ -13,6 +24,19 @@ function Home() {
 
   return (
     <div style={styles.content}>
+      <div style={styles.topBar}>
+        <span style={styles.welcome}>Olá, {user?.nome}</span>
+        <button
+          style={styles.logoutBtn}
+          onClick={() => {
+            localStorage.removeItem('user')
+            navigate('/login')
+          }}
+        >
+          Sair
+        </button>
+      </div>
+
       <div style={styles.titleRow}>
         <h1 style={styles.pageTitle}>Meus pacientes</h1>
         <Link to="/create-patient" style={styles.addBtn}>
@@ -49,6 +73,27 @@ function Home() {
 const styles = {
   content: {
     padding: '2rem 240px',
+  },
+  topBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  welcome: {
+    fontFamily: "'Poppins', sans-serif",
+    fontSize: 14,
+    color: '#555',
+  },
+  logoutBtn: {
+    fontFamily: "'Poppins', sans-serif",
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#e53935',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    textDecoration: 'underline',
   },
   titleRow: {
     display: 'flex',

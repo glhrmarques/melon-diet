@@ -70,6 +70,7 @@ func login(c *gin.Context) {
 	}
 	
 	var user Usuario
+	
 	err := db.QueryRow(context.Background(),
 		`SELECT id, nome, email, senha_hash, tipo, ativo, criado_em
 		FROM usuarios WHERE email = $1`,

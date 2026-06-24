@@ -36,6 +36,39 @@ type Nutricionista struct {
 	Celular string `json:"celular"`
 }
 
+func addNutricionista(c *gin.Context) {
+
+	var input struct { 
+		Nome string `json:"nome"`
+		Email string `json:"email"`
+		Senha string `json:"senha"` 
+		CRN string `json:"crn"`
+		Celular string `json:celular`
+	}
+
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Falha ao continuar"})
+		return 
+	}
+
+	hashedpassowrd, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost())
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Hashing failed"})
+		return
+	}
+
+	tx, err := db.Begin(context.Background())
+
+	if err != nil {
+		c.JSON(htto.StatusBadRequest, gin.H{"error": "Failed to strart the transaction"})
+		return
+	}
+
+
+}
+
 
 
 

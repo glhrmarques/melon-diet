@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"log"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -22,80 +23,21 @@ type Usuario struct {
 	ID int `json:"id"`
 	Nome string `json:"nome"`
 	Email string `json:"email"`
-	SenhaHash string `json:"senha_hash,omitempty"`
+	SenhaHash string `json:"nome,omitempty"`
 	Tipo string `json:"tipo"`
 	Ativo bool `json:"ativo"`
 	CriadoEm time.Time `json:"criado_em"`
 }
 
-func addUser(c *gin.Context) {
-	var newUser Usuario
-
-	//ShouldBindJSON is used to customize the error message.
-	if err := c.ShouldBindJSON(&newUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.SenhaHash), bcrypt.DefaultCost)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
-		return
-	}
-
-	err = db.QueryRow(context.Background(),
-		//VALUES: Parameters placeholders, they a act as slots thar fill safely by the database driver, instead of concatenated user input straight into  the query
-		//RETURNING: 
-		`INSERT INTO usuarios (nome, email, senha_hash, tipo)
-		 VALUES ($1, $2, $3, $4)
-
-		 RETURNING id, ativo, criado_em`,
-		newUser.Nome, newUser.Email, string(hashedPassword), newUser.Tipo,
-	).Scan(&newUser.ID, &newUser.Ativo, &newUser.CriadoEm)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create the user"})
-		return
-	}
-
-	newUser.SenhaHash = ""
-	c.JSON(http.StatusCreated, newUser)
-}	
-
-func login(c *gin.Context) {
-	var input struct {
-		Email string `json:"email"`
-		Senha string `json:"senha"`
-	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	
-	var user Usuario
-	err := db.QueryRow(context.Background(),
-		`SELECT id, nome, email, senha_hash, tipo, ativo, criado_em
-		FROM usuarios WHERE email = $1`,
-		input.Email,
-	).Scan(&user.ID, &user.Nome, &user.Email, &user.SenhaHash, &user.Tipo, &user.Ativo, &user.CriadoEm)
-
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "email ou senha incorreto"})
-		return 
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.SenhaHash), []byte(input.Senha)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "email ou senha incorreto"})
-		return
-	}
-
-	user.SenhaHash = ""
-	c.JSON(http.StatusOK, user)
-
+type Nutricionista struct {
+	ID int `json:"id"`
+	UsuarioId int `json:"usuario_id"`
+	CRN string `json:"crn"`
+	Celular string `json:"celular"`
 }
+
+
+
 
 
 func main() {

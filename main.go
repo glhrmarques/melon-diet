@@ -23,7 +23,7 @@ type Usuario struct {
 	ID int `json:"id"`
 	Nome string `json:"nome"`
 	Email string `json:"email"`
-	SenhaHash string `json:"nome,omitempty"`
+	SenhaHash string `json:"senha_hash,omitempty"`
 	Tipo string `json:"tipo"`
 	Ativo bool `json:"ativo"`
 	CriadoEm time.Time `json:"criado_em"`
@@ -31,7 +31,7 @@ type Usuario struct {
 
 type Nutricionista struct {
 	ID int `json:"id"`
-	UsuarioId int `json:"usuario_id"`
+	UsuarioID int `json:"usuario_id"`
 	CRN string `json:"crn"`
 	Celular string `json:"celular"`
 }
@@ -52,7 +52,7 @@ func addNutricionista(c *gin.Context) {
 		return 
 	}
 
-	hashedpassowrd, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost())
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Hashing failed"})
@@ -62,10 +62,51 @@ func addNutricionista(c *gin.Context) {
 	tx, err := db.Begin(context.Background())
 
 	if err != nil {
-		c.JSON(htto.StatusBadRequest, gin.H{"error": "Failed to strart the transaction"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to strart the transaction"})
 		return
 	}
 
+	defer tx.Rollback(context.Background())
+
+	var usuario Usuario
+	err = tx.QueryRow(context.Background(),
+		`INSERT INTO usuarios (nome, email, senha_hash, tipo)
+		VALUES ($1, $2, $3, 'nutricionista')
+		RETURNING id, nome, email, tipo, ativo, criado_em`,
+		input.Nome, input.Email, string(hashedPassword),
+	).Scan(&usuario.ID, &usuario.Nome, &usuario.Email, &usuario.Tipo, &usuario.Ativo, &usuario.CriadoEm)
+
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create usuario"})
+		return
+	}
+
+
+	var nutri Nutricionista
+	err = tx.QueryRow(context.Background(),
+	`INSERT INTO nutricionistas (usuario_id, crn, celular)
+	 VALUES ($1, $2, $3)
+	 RETURNING id, usuario_id, crn, celular`,
+	 usuario.ID, input.CRN, input.Celular,
+	).Scan(&nutri.ID, &nutri.UsuarioID, &nutri.CRN, &nutri.Celular)
+
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to create nutricionista"})
+		return
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit db transaction"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"usuario": usuario,
+		"nutricionista": nutri,
+	})
 
 }
 
@@ -93,7 +134,6 @@ func main() {
 	router := gin.Default()
 	router.Use(cors.Default())
 
-	router.POST("/usuarios", addUser)
-	router.POST("/login", login)
+	router.POST("/usuarios", addNutricionista)
 	router.Run("localhost:8080")
 }

@@ -36,6 +36,17 @@ type Nutricionista struct {
 	Celular string `json:"celular"`
 }
 
+type Paciente struct {
+	ID string `json:"id"`
+	UsuarioID string `json:"usuario_id"`
+	NutricionistaID string `json:"nutricionista_id"`
+	DataNascimento string `json:"data_nascimento"`
+	Sexo string `json:"sexo"`
+	AlturaCM string `json:"altura_cm"`
+	PesoKG string `json:"peso_kg"`
+	Telefone string `json:"telefone"`
+}
+
 func addNutricionista(c *gin.Context) {
 
 	var input struct { 
@@ -110,6 +121,76 @@ func addNutricionista(c *gin.Context) {
 
 }
 
+func addPaciente(c *gin.Context) {
+
+	var input struct {
+		Nome string `json:"nome"`
+		Email string `json:"email"`
+		DataNascimento string `json:"data_nascimento"`
+		Sexo string `json:"sexo"`
+		AlturaCM string `json:"altura_cm"`
+		PesoKG string `json:"peso_kg"`
+		Telefone string `json:"telefone"`
+		Senha string `json:"senha"`
+	}
+
+	//
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Falha ao continuar"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost)
+
+	//start the DB transaction with begin 
+	tx, err := db.Begin(context.Background())
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "falha ao iniciar transacao"})
+		return
+	}
+
+	//Reschedule the command to reset the DB transaction to be last executed 
+	defer tx.Rollback(context.Background())
+
+	var usuario Usuario
+	err = tx.QueryRow(context.Background(),
+	`INSERT INTO usuarios (nome, email, senha_hash, tipo)
+	 VALUES ($1, $2, $3, 'paciente')
+	 RETURNING id, nome, email, tipo, ativo, criado_em`,
+	 input.Nome, input.Email, string(hashedPassword),
+	).Scan(&usuario.ID, &usuario.Nome, &usuario.Email, &usuario.Tipo, &usuario.Ativo, &usuario.CriadoEm)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create usuario"})
+		return
+	}
+
+	var paciente Paciente 
+	err = tx.QueryRow(context.Background(),
+	`INSERT INTO pacientes (usuario_id, data_nascimento, sexo, altura_cm, peso_kg, telefone)
+	 VALUES ($1, $2, $3, $4, $5, $6)
+	 RETURNING id, usuario_id, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
+	 usuario.ID, input.DataNascimento, input.Sexo, input.AlturaCM, input.PesoKG, input.Telefone,
+	).Scan(&paciente.ID, &paciente.UsuarioID, &paciente.DataNascimento, &paciente.Sexo, &paciente.AlturaCM, &paciente.PesoKG, &paciente.Telefone)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to create nutricionista"})
+		return
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit db transaction"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"usuario": usuario,
+		"paciente": paciente,
+	})
+}
+
 
 
 
@@ -135,5 +216,6 @@ func main() {
 	router.Use(cors.Default())
 
 	router.POST("/usuarios", addNutricionista)
+	router.POST("/pacientes", addPaciente)
 	router.Run("localhost:8080")
 }

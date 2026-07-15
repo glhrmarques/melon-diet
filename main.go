@@ -37,10 +37,10 @@ type Nutricionista struct {
 }
 
 type Paciente struct {
-	ID string `json:"id"`
-	UsuarioID string `json:"usuario_id"`
-	NutricionistaID string `json:"nutricionista_id"`
-	DataNascimento string `json:"data_nascimento"`
+	ID int `json:"id"`
+	UsuarioID int `json:"usuario_id"`
+	NutricionistaID int `json:"nutricionista_id"`
+	DataNascimento time.Time `json:"data_nascimento"`
 	Sexo string `json:"sexo"`
 	AlturaCM string `json:"altura_cm"`
 	PesoKG string `json:"peso_kg"`
@@ -54,7 +54,7 @@ func addNutricionista(c *gin.Context) {
 		Email string `json:"email"`
 		Senha string `json:"senha"` 
 		CRN string `json:"crn"`
-		Celular string `json:celular`
+		Celular string `json:"celular"`
 	}
 
 
@@ -107,6 +107,7 @@ func addNutricionista(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to create nutricionista"})
 		return
 	}
+	
 
 	err = tx.Commit(context.Background())
 	if err != nil {
@@ -126,12 +127,13 @@ func addPaciente(c *gin.Context) {
 	var input struct {
 		Nome string `json:"nome"`
 		Email string `json:"email"`
+		NutricionistaID int `json:"nutricionista_id"`
+		Senha string `json:"senha"`
 		DataNascimento string `json:"data_nascimento"`
 		Sexo string `json:"sexo"`
 		AlturaCM string `json:"altura_cm"`
 		PesoKG string `json:"peso_kg"`
 		Telefone string `json:"telefone"`
-		Senha string `json:"senha"`
 	}
 
 	//
@@ -141,6 +143,11 @@ func addPaciente(c *gin.Context) {
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Hashing failed"})
+		return
+	}
 
 	//start the DB transaction with begin 
 	tx, err := db.Begin(context.Background())
@@ -168,14 +175,15 @@ func addPaciente(c *gin.Context) {
 
 	var paciente Paciente 
 	err = tx.QueryRow(context.Background(),
-	`INSERT INTO pacientes (usuario_id, data_nascimento, sexo, altura_cm, peso_kg, telefone)
-	 VALUES ($1, $2, $3, $4, $5, $6)
-	 RETURNING id, usuario_id, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
-	 usuario.ID, input.DataNascimento, input.Sexo, input.AlturaCM, input.PesoKG, input.Telefone,
-	).Scan(&paciente.ID, &paciente.UsuarioID, &paciente.DataNascimento, &paciente.Sexo, &paciente.AlturaCM, &paciente.PesoKG, &paciente.Telefone)
+	`INSERT INTO pacientes (usuario_id, nutricionista_id, data_nascimento, sexo, altura_cm, peso_kg, telefone)
+	 VALUES ($1, $2, $3, $4, $5, $6, $7)
+	 RETURNING id, usuario_id, nutricionista_id, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
+	 usuario.ID, input.NutricionistaID, input.DataNascimento, input.Sexo, input.AlturaCM, input.PesoKG, input.Telefone,
+	).Scan(&paciente.ID, &paciente.UsuarioID, &paciente.NutricionistaID, &paciente.DataNascimento, &paciente.Sexo, &paciente.AlturaCM, &paciente.PesoKG, &paciente.Telefone)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to create nutricionista"})
+		log.Printf("failed to create paciente: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to create paciente"})
 		return
 	}
 
@@ -190,8 +198,6 @@ func addPaciente(c *gin.Context) {
 		"paciente": paciente,
 	})
 }
-
-
 
 
 

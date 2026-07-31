@@ -16,6 +16,7 @@ func main() {
 	router.Use(cors.Default())
 
 	router.POST("/usuarios", handlers.AddNutricionista)
+	router.POST("/pacientes", handlers.AddPacient)
 
 	router.Run("localhost:8080")
 }

@@ -8,6 +8,7 @@ const config: Config = {
         colors: {
             content: {
                 primary: "var(--black-100)",
+                secondary: "var(--black-400)",
             },
         },
         spacing: {

@@ -11,7 +11,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
     >
-      <body className="min-h-full flex flex-row justify-center">{children}</body>
+      <body className="mx-auto max-w-screen-2xl">{children}</body>
     </html>
   );
 }

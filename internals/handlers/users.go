@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 
 	"melom/web-services/internals/db"
 )
@@ -42,7 +42,7 @@ func AddNutricionista(c *gin.Context) {
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost)
-	if err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Hashing failed"})
 		return
 	}
@@ -90,5 +90,52 @@ func AddNutricionista(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"usuario":       usuario,
 		"nutricionista": nutri,
+	})
+}
+
+func Login(c *gin.Context) {
+
+	//binding:"required" -> this fied must be present in the JSON and have the correct field format
+	var input struct {
+		Email string `json:"email" binding:"required"`
+		Senha string `json:"senha" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "E-mail e senha são obrigatórios"})
+		return
+	}
+
+	var usuario Usuario
+	err := db.Pool.QueryRow(context.Background(), `
+		SELECT id, nome, email, senha_hash, tipo, ativo, criado_em
+		FROM usuarios
+		WHERE email = $1
+	`, input.Email).Scan(
+		&usuario.ID,
+		&usuario.Nome,
+		&usuario.Email,
+		&usuario.SenhaHash,
+		&usuario.Tipo,
+		&usuario.Ativo,
+		&usuario.CriadoEm,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "E-mail ou senha inválidos"})
+		return
+	}
+
+	if !usuario.Ativo ||
+		bcrypt.CompareHashAndPassword([]byte(usuario.SenhaHash), []byte(input.Senha)) != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "E-mail ou senha inválidos"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"usuario": gin.H{
+			"id": usuario.ID, "nome": usuario.Nome,
+			"email": usuario.Email, "tipo": usuario.Tipo,
+		},
 	})
 }

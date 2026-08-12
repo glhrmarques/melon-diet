@@ -25,7 +25,6 @@ type Usuario struct {
 type Nutricionista struct {
 	ID        int    `json:"id"`
 	UsuarioID int    `json:"usuario_id"`
-	CRN       string `json:"crn"`
 	Celular   string `json:"celular"`
 }
 
@@ -34,7 +33,6 @@ func AddNutricionista(c *gin.Context) {
 		Nome    string `json:"nome"`
 		Email   string `json:"email"`
 		Senha   string `json:"senha"`
-		CRN     string `json:"crn"`
 		Celular string `json:"celular"`
 	}
 
@@ -71,11 +69,11 @@ func AddNutricionista(c *gin.Context) {
 
 	var nutri Nutricionista
 	err = tx.QueryRow(context.Background(),
-		`INSERT INTO nutricionistas (usuario_id, crn, celular)
-		 VALUES ($1, $2, $3)
-		 RETURNING id, usuario_id, crn, celular`,
-		usuario.ID, input.CRN, input.Celular,
-	).Scan(&nutri.ID, &nutri.UsuarioID, &nutri.CRN, &nutri.Celular)
+		`INSERT INTO nutricionistas (usuario_id, celular)
+		 VALUES ($1, $2)
+		 RETURNING id, usuario_id, celular`,
+		usuario.ID, input.Celular,
+	).Scan(&nutri.ID, &nutri.UsuarioID, &nutri.Celular)
 
 	if err != nil {
 		log.Printf("Failed to create nutricionista: %v", err)

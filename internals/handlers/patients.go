@@ -15,6 +15,7 @@ type Patient struct {
 	ID              int       `json:"id"`
 	NutricionistaID int       `json:"nutricionista_id"`
 	DataNascimento  time.Time `json:"data_nascimento"`
+	Nome 			string	  `json:"nome"`
 	Sexo            string    `json:"sexo"`
 	Altura          float64   `json:"altura_cm"`
 	Peso            float64   `json:"peso_kg"`
@@ -26,6 +27,7 @@ func AddPacient(c *gin.Context) {
 	var input struct {
 		Email          string    `json:"email"`
 		DataNascimento time.Time `json:"data_nascimento"`
+		Nome 		   string	 `json:"nome"`
 		Sexo           string    `json:"sexo"`
 		Altura         float64   `json:"altura_cm"`
 		Peso           float64   `json:"peso_kg"`
@@ -52,13 +54,14 @@ func AddPacient(c *gin.Context) {
 	// Make sure a nutricionista with id 6 actually exists, or this will fail
 	// on the foreign key constraint.
 	err = tx.QueryRow(context.Background(),
-		`INSERT INTO pacientes (nutricionista_id, data_nascimento, sexo, altura_cm, peso_kg, telefone)
-		 VALUES (6, $1, $2, $3, $4, $5)
-		 RETURNING id, nutricionista_id, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
-		 input.DataNascimento, input.Sexo, input.Altura, input.Peso, input.Telefone,
+		`INSERT INTO pacientes (nutricionista_id, data_nascimento, nome, sexo, altura_cm, peso_kg, telefone)
+		 VALUES (1, $1, $2, $3, $4, $5, $6)
+		 RETURNING id, nutricionista_id, nome, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
+		 input.DataNascimento, input.Nome, input.Sexo, input.Altura, input.Peso, input.Telefone,
 	).Scan(
 		&patient.ID,
 		&patient.NutricionistaID,
+		&patient.Nome,
 		&patient.DataNascimento,
 		&patient.Sexo,
 		&patient.Altura,

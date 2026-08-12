@@ -1,0 +1,20 @@
+@config "./tailwind.config.ts";
+@import "tailwindcss";
+
+:root {
+  --black-100: #000000;
+  --black-200: #2D2D2D;
+  --black-300: #5B5B5B;
+  --black-400: #8E8E8E;
+  --black-500: #FFFFFF;
+
+  --spacing-16: 16px;
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}

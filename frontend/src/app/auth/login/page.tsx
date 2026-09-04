@@ -81,6 +81,7 @@ export default function Login() {
             </form>
             <button
               type="button"
+              onClick={() => router.push('/auth/signup')}
               className="mt-16 w-full px-12 py-3 bg-[#F6F2EF] rounded-[16px] text-black
               hover:bg-[#e3dcd6] cursor-pointer transition-colors">
                 Criar conta

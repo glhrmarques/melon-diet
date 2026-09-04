@@ -22,6 +22,7 @@ func main() {
 
 	router.POST("/usuarios", handlers.AddNutricionista)
 	router.POST("/pacientes", handlers.AddPacient)
+	router.POST("/refeicoes", handlers.AddRefeicao)
 	router.POST("/auth/login", handlers.Login)
 
 	router.Run("localhost:8080")

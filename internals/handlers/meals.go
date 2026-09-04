@@ -54,6 +54,7 @@ func AddRefeicao(c *gin.Context) {
 	}
 
 	var refeicao Refeicao
+	
 	err := db.Pool.QueryRow(context.Background(), `
 		INSERT INTO refeicao (dieta_id, periodo, descricao)
 		VALUES ($1, $2, $3)

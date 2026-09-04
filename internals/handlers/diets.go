@@ -36,6 +36,7 @@ func AddDieta(c *gin.Context) {
 		RETURNING id, paciente_id, nutricionista_id`,
 		input.PacienteID, input.NutricionistaID,
 	).Scan(&dieta.ID, &dieta.PacienteID, &dieta.NutricionistaID)
+	
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23503" { // foreign_key_violation

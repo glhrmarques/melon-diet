@@ -21,6 +21,7 @@ func main() {
 	}))
 
 	router.POST("/usuarios", handlers.AddNutricionista)
+	router.GET("/pacientes", handlers.ListPatients)
 	router.POST("/pacientes", handlers.AddPacient)
 	router.POST("/dietas", handlers.AddDieta)
 	router.POST("/refeicoes", handlers.AddRefeicao)

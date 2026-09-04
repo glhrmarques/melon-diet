@@ -27,12 +27,23 @@ export default function Login() {
 
       const data = await response.json();
 
+      type Usuario = {
+        id: number;
+        nome: string;
+        email: string;
+        tipo: string;
+      };
+
       if (!response.ok) {
         setError(data.error ?? "Não foi possível entrar.");
         return;
       }
 
-	  router.push("/");
+
+      localStorage.setItem("usuario", JSON.stringify(data.usuario));
+      router.replace("/home");
+
+	  router.push("/home");
     } catch {
       setError("Não foi possível conectar ao servidor.");
     } finally {

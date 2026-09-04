@@ -42,9 +42,10 @@ func AddNutricionista(c *gin.Context) {
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Senha), bcrypt.DefaultCost)
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Hashing failed"})
-		return
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Hashing failed"})
+    	return
 	}
 
 	tx, err := db.Pool.Begin(context.Background())

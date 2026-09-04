@@ -32,9 +32,9 @@ var periodosRefeicao = map[string]struct{}{
 // AddRefeicao creates a meal for an existing diet.
 func AddRefeicao(c *gin.Context) {
 	var input struct {
-		DietaID   int    `json:"dieta_id" binding:"required,gt=0"`
-		Periodo   string `json:"periodo" binding:"required"`
-		Descricao string `json:"descricao" binding:"required"`
+		DietaID   int    `json:"dieta_id"`
+		Periodo   string `json:"periodo"`
+		Descricao string `json:"descricao"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {

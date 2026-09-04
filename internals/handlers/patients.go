@@ -55,7 +55,7 @@ func AddPacient(c *gin.Context) {
 	// on the foreign key constraint.
 	err = tx.QueryRow(context.Background(),
 		`INSERT INTO pacientes (nutricionista_id, data_nascimento, nome, sexo, altura_cm, peso_kg, telefone)
-		 VALUES (1, $1, $2, $3, $4, $5, $6)
+		 VALUES (2, $1, $2, $3, $4, $5, $6)
 		 RETURNING id, nutricionista_id, nome, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
 		 input.DataNascimento, input.Nome, input.Sexo, input.Altura, input.Peso, input.Telefone,
 	).Scan(

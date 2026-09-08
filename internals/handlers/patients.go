@@ -25,7 +25,9 @@ type Patient struct {
 
 // ListPatients returns only the patients linked to the logged-in nutritionist's user.
 func ListPatients(c *gin.Context) {
+	//converts a string to an integer
 	usuarioID, err := strconv.Atoi(c.Query("usuario_id"))
+	
 	if err != nil || usuarioID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "usuario_id inválido"})
 		return
@@ -38,11 +40,13 @@ func ListPatients(c *gin.Context) {
 		INNER JOIN nutricionistas n ON n.id = p.nutricionista_id
 		WHERE n.usuario_id = $1
 		ORDER BY p.nome`, usuarioID)
+		
 	if err != nil {
 		log.Printf("Falha ao buscar pacientes: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao buscar pacientes"})
 		return
 	}
+	//Resource management, Connection Pool Exhaustion
 	defer rows.Close()
 
 	patients := make([]Patient, 0)

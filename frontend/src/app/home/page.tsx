@@ -68,7 +68,7 @@ export default function Home() {
     async function loadPatients() {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/pacientes?usuario_id=${usuarioID}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/patients?usuario_id=${usuarioID}`,
         );
         const data = await response.json();
 

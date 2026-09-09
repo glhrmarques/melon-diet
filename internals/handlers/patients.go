@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	"melom/web-services/internals/db"
 )
@@ -27,7 +29,7 @@ type Patient struct {
 func ListPatients(c *gin.Context) {
 	//converts a string to an integer
 	usuarioID, err := strconv.Atoi(c.Query("usuario_id"))
-	
+
 	if err != nil || usuarioID <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "usuario_id inválido"})
 		return
@@ -40,7 +42,7 @@ func ListPatients(c *gin.Context) {
 		INNER JOIN nutricionistas n ON n.id = p.nutricionista_id
 		WHERE n.usuario_id = $1
 		ORDER BY p.nome`, usuarioID)
-		
+
 	if err != nil {
 		log.Printf("Falha ao buscar pacientes: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao buscar pacientes"})
@@ -79,10 +81,28 @@ func ListPatients(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pacientes": patients})
 }
 
-func AddPacient(c *gin.Context) {
+func AddPatient(c *gin.Context) {
+	usuarioID, err := strconv.Atoi(c.Query("usuario_id"))
+	if err != nil || usuarioID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "usuario_id inválido"})
+		return
+	}
+
+	tx, err := db.Pool.Begin(context.Background())
+
+	var nutricionistaID int
+
+	err = tx.QueryRow(context.Background(),
+		`SELECT id FROM nutricionistas WHERE usuario_id = $1`, usuarioID,
+	).Scan(&nutricionistaID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Nutricionista não encontrado"})
+		return
+	}
+
+	defer tx.Rollback(context.Background())
 
 	var input struct {
-		Email          string    `json:"email"`
 		DataNascimento time.Time `json:"data_nascimento"`
 		Nome           string    `json:"nome"`
 		Sexo           string    `json:"sexo"`
@@ -97,24 +117,26 @@ func AddPacient(c *gin.Context) {
 		return
 	}
 
-	tx, err := db.Pool.Begin(context.Background())
+
 	if err != nil {
 		log.Printf("Falha ao transacionar: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Falha ao transacionar"})
 		return
 	}
-	defer tx.Rollback(context.Background())
+
+
+	if err != nil {
+		log.Printf("Falha ao buscar nutricionista: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao criar paciente"})
+		return
+	}
 
 	var patient Patient
-	// NOTE: nutricionista_id is hardcoded to 6 below — replace with a real value
-	// once you have auth / a way to identify the logged-in nutricionista.
-	// Make sure a nutricionista with id 6 actually exists, or this will fail
-	// on the foreign key constraint.
 	err = tx.QueryRow(context.Background(),
 		`INSERT INTO pacientes (nutricionista_id, data_nascimento, nome, sexo, altura_cm, peso_kg, telefone)
-		 VALUES (2, $1, $2, $3, $4, $5, $6)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 RETURNING id, nutricionista_id, nome, data_nascimento, sexo, altura_cm, peso_kg, telefone`,
-		input.DataNascimento, input.Nome, input.Sexo, input.Altura, input.Peso, input.Telefone,
+		nutricionistaID, input.DataNascimento, input.Nome, input.Sexo, input.Altura, input.Peso, input.Telefone,
 	).Scan(
 		&patient.ID,
 		&patient.NutricionistaID,

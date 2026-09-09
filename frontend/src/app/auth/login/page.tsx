@@ -42,8 +42,6 @@ export default function Login() {
 
       localStorage.setItem("usuario", JSON.stringify(data.usuario));
       router.replace("/home");
-
-	  router.push("/home");
     } catch {
       setError("Não foi possível conectar ao servidor.");
     } finally {

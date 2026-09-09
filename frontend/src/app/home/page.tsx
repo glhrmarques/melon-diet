@@ -2,13 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type Usuario = {
-  id: number;
-  nome: string;
-  email: string;
-  tipo: string;
-};
+import { UserGreeting } from "@/components/UserGreeting";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 type Patient = {
   id: number;
@@ -39,25 +34,10 @@ function calculateAge(dateOfBirth: string) {
 
 export default function Home() {
   const router = useRouter();
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const usuario = useCurrentUser();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
   const [patientsError, setPatientsError] = useState("");
-
-  useEffect(() => {
-    const sessionTimer = window.setTimeout(() => {
-      const usuarioSalvo = localStorage.getItem("usuario");
-
-      if (!usuarioSalvo) {
-        router.replace("/auth/login");
-        return;
-      }
-
-      setUsuario(JSON.parse(usuarioSalvo));
-    }, 0);
-
-    return () => window.clearTimeout(sessionTimer);
-  }, [router]);
 
   useEffect(() => {
     if (!usuario) return;
@@ -99,12 +79,8 @@ export default function Home() {
 
   return (
     <section className="flex flex-col bg-[#ffffff]">
-        <div className="
-        flex justify-between p-6
-        bg-[#ffffff] border-b border-black/20">
-            <p className="text-[16px] font-[700]">NUTRI</p>
-            <p className="font-[400] leading-none">Olá, {usuario.nome}</p>
-        </div>
+        <UserGreeting nome={usuario.nome} />
+        
         <div className="flex justify-between p-6">
             <p className="text-[16px] text-[32px] font-[600]">Meus pacientes</p>
             <button
@@ -113,6 +89,7 @@ export default function Home() {
             h-[48px] rounded-[16px] bg-gray-950
             hover:bg-gray-800 cursor-pointer
             text-[#ffffff] px-6 font-[500]"
+            onClick={() => router.push('/addPatient')}
             >Adicionar paciente</button>
         </div>
 

@@ -105,8 +105,15 @@ export default function Home() {
             <p className="text-[16px] font-[700]">NUTRI</p>
             <p className="font-[400] leading-none">Olá, {usuario.nome}</p>
         </div>
-        <div className="p-6">
+        <div className="flex justify-between p-6">
             <p className="text-[16px] text-[32px] font-[600]">Meus pacientes</p>
+            <button
+            type="button"
+            className="
+            h-[48px] rounded-[16px] bg-gray-950
+            hover:bg-gray-800 cursor-pointer
+            text-[#ffffff] px-6 font-[500]"
+            >Adicionar paciente</button>
         </div>
 
         {loadingPatients && <p className="px-6 text-[14px]">Carregando pacientes...</p>}

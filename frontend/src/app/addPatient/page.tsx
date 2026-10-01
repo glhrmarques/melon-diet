@@ -2,7 +2,8 @@
 
 import { UserGreeting } from "@/components/UserGreeting";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useRef, useState, type FormEvent } from "react";
 
 function formatCardName(name: string) {
   const nameParts = name.trim().split(/\s+/).filter(Boolean);
@@ -31,12 +32,69 @@ function calculateAge(birthDate: string) {
 
 export default function AddPatient() {
   const usuario = useCurrentUser();
+  const router = useRouter();
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [sex, setSex] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [email, setEmail] = useState("");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const submitting = useRef(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!usuario || submitting.current) return;
+
+    setSubmitError("");
+    const heightMeters = Number(height);
+    const weightKg = Number(weight);
+    const heightCm = Math.round(heightMeters * 100);
+
+    if (
+      !name.trim() || !height.trim() || !weight.trim() ||
+      !Number.isFinite(heightCm) || !Number.isFinite(weightKg) ||
+      heightCm <= 0 || weightKg <= 0
+    ) {
+      setSubmitError("Confira o nome, a altura e o peso.");
+      return;
+    }
+
+    submitting.current = true;
+    setIsSubmitting(true);
+    const failureMessage = "Não foi possível cadastrar o paciente. Tente novamente.";
+
+    try {
+      const apiURL = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiURL) throw new Error(failureMessage);
+
+      const response = await fetch(`${apiURL}/patients?usuario_id=${usuario.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: name.trim(),
+          data_nascimento: birthDate,
+          sexo: sex,
+          altura_cm: heightCm,
+          peso_kg: weightKg,
+          email: email.trim(),
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(typeof data?.error === "string" ? data.error : failureMessage);
+      }
+      router.push("/home");
+    } catch (error) {
+      setSubmitError(error instanceof Error && error.message !== "Failed to fetch"
+        ? error.message : failureMessage);
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
+  }
 
   if (!usuario) return null;
 
@@ -53,9 +111,12 @@ export default function AddPatient() {
           <p className="text-[32px] font-[500]">Adicionar paciente</p>
           <p className="text-[18px] font-[400] pb-10 text-[#000000]/50">Informe os dados do paciente.</p>
 
-          <form className="grid grid-cols-3 gap-x-3 gap-y-4">
+          <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="grid grid-cols-3 gap-x-3 gap-y-4">
             <div className="col-span-3 grid grid-cols-2 gap-3">
+              <label htmlFor="patient-name" className="sr-only">Nome</label>
               <input
+                id="patient-name"
+                disabled={isSubmitting}
                 type="text"
                 placeholder="Nome"
                 required
@@ -67,7 +128,10 @@ export default function AddPatient() {
                 focus:outline-[#000000]
                 "
               />
+              <label htmlFor="patient-birth-date" className="sr-only">Data de nascimento</label>
               <input
+                id="patient-birth-date"
+                disabled={isSubmitting}
                 type="date"
                 placeholder="Data de nascimento"
                 required
@@ -80,9 +144,10 @@ export default function AddPatient() {
                 "
               />
             </div>
-              <input
-                type="text"
-                placeholder="Sexo"
+              <label htmlFor="patient-sex" className="sr-only">Sexo</label>
+              <select
+                id="patient-sex"
+                disabled={isSubmitting}
                 required
                 value={sex}
                 onChange={(event) => setSex(event.target.value)}
@@ -91,10 +156,21 @@ export default function AddPatient() {
                 hover:outline-[1.5] hover:outline-[#000000] cursor-pointer transition-colors
                 focus:outline-[#000000]
                 "
-              />
+              >
+                <option value="" disabled>Sexo</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Outro">Outro</option>
+                <option value="Não informado">Não informado</option>
+              </select>
+              <label htmlFor="patient-height" className="sr-only">Altura (m)</label>
               <input
+                id="patient-height"
+                min="0.01"
+                step="0.01"
+                disabled={isSubmitting}
                 type="number"
-                placeholder="Altura"
+                placeholder="Altura (m)"
                 required
                 value={height}
                 onChange={(event) => setHeight(event.target.value)}
@@ -104,9 +180,14 @@ export default function AddPatient() {
                 focus:outline-[#000000]
                 "
               />
+              <label htmlFor="patient-weight" className="sr-only">Peso (kg)</label>
               <input
+                id="patient-weight"
+                min="0.1"
+                step="0.1"
+                disabled={isSubmitting}
                 type="number"
-                placeholder="Peso"
+                placeholder="Peso (kg)"
                 required
                 value={weight}
                 onChange={(event) => setWeight(event.target.value)}
@@ -116,7 +197,10 @@ export default function AddPatient() {
                 focus:outline-[#000000]
                 "
               />
+              <label htmlFor="patient-email" className="sr-only">E-mail</label>
               <input
+                id="patient-email"
+                disabled={isSubmitting}
                 type="email"
                 placeholder="E-mail"
                 required
@@ -129,11 +213,13 @@ export default function AddPatient() {
                 "
               />
               <button
-              type="button"
-              className="col-span-3 justify-self-end px-12 py-3 bg-[#000000] rounded-[16px] text-[#ffffff] font-[500 mt-[16px]
-              hover:bg-[#3d3d3d] cursor-pointer transition-colors">
-                Confirmar cadastro
+              type="submit"
+              disabled={isSubmitting}
+              className="col-span-3 justify-self-end px-12 py-3 bg-[#000000] rounded-[16px] text-[#ffffff] font-[500] mt-[16px]
+              hover:bg-[#3d3d3d] cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                {isSubmitting ? "Cadastrando..." : "Confirmar cadastro"}
               </button>
+            {submitError && <p role="alert" className="col-span-3 text-red-600">{submitError}</p>}
           </form>
 
         </div>

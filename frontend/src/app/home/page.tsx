@@ -14,10 +14,12 @@ type Patient = {
   altura_cm: number;
   peso_kg: number;
   telefone: string;
+  email: string;
 };
 
 function calculateAge(dateOfBirth: string) {
-  const birthDate = new Date(dateOfBirth);
+  const [year, month, day] = dateOfBirth.slice(0, 10).split("-").map(Number);
+  const birthDate = new Date(year, month - 1, day);
 
   if (Number.isNaN(birthDate.getTime())) return "—";
 
@@ -101,7 +103,7 @@ export default function Home() {
         
         <div className="grid grid-cols-6 px-10 mb-3">
           <p className="text-[12px] font-[600] text-gray-500">Paciente</p>
-          <p className="text-[12px] font-[600] text-gray-500">Celular</p>
+          <p className="text-[12px] font-[600] text-gray-500">Contato</p>
           <p className="text-[12px] font-[600] text-gray-500">Idade</p>
           <p className="text-[12px] font-[600] text-gray-500">Altura</p>
           <p className="text-[12px] font-[600] text-gray-500">Peso</p>
@@ -116,7 +118,7 @@ export default function Home() {
                 </div>
                 <p className="text-[14px] font-[600] leading-none">{patient.nome}</p>
               </div>
-              <p className="text-[14px] font-[400] leading-none">{patient.telefone}</p>
+              <p className="text-[14px] font-[400] leading-none">{patient.email || patient.telefone || "—"}</p>
               <p className="text-[14px] font-[400] leading-none">{calculateAge(patient.data_nascimento)}</p>
               <p className="text-[14px] font-[400] leading-none">{patient.altura_cm} cm</p>
               <p className="text-[14px] font-[400] leading-none">{patient.peso_kg} kg</p>

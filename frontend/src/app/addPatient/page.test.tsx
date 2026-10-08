@@ -20,6 +20,7 @@ function fillForm() {
     "Altura (m)": "1.68",
     "Peso (kg)": "64.5",
     "E-mail": "ana@example.com",
+    Telefone: " +55 (11) 99999-1234 ",
   };
   for (const [label, value] of Object.entries(values)) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
@@ -51,8 +52,17 @@ describe("patient registration", () => {
     expect(options?.headers).toEqual({ "Content-Type": "application/json" });
     expect(JSON.parse(options?.body as string)).toEqual({
       nome: "Ana Silva", data_nascimento: "1995-04-20", sexo: "Feminino",
-      altura_cm: 168, peso_kg: 64.5, email: "ana@example.com",
+      altura_cm: 168, peso_kg: 64.5, email: "ana@example.com", telefone: "+55 (11) 99999-1234",
     });
+  });
+
+  it("allows registration without an optional telephone", async () => {
+    fetchMock.mockResolvedValue(success());
+    const button = fillForm();
+    fireEvent.change(screen.getByLabelText("Telefone"), { target: { value: "" } });
+    fireEvent.click(button);
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/home"));
+    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string).telefone).toBe("");
   });
 
   it("disables submission while pending and blocks repeated submit events", async () => {
@@ -62,6 +72,7 @@ describe("patient registration", () => {
     const form = button.closest("form")!;
     fireEvent.click(button);
     expect(screen.getByRole("button", { name: "Cadastrando..." })).toBeDisabled();
+    expect(screen.getByLabelText("Telefone")).toBeDisabled();
     fireEvent.submit(form);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(push).not.toHaveBeenCalled();
@@ -76,6 +87,7 @@ describe("patient registration", () => {
     expect(push).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Nome")).toHaveValue(" Ana Silva ");
     expect(screen.getByLabelText("E-mail")).toHaveValue("ana@example.com");
+    expect(screen.getByLabelText("Telefone")).toHaveValue(" +55 (11) 99999-1234 ");
     const button = screen.getByRole("button", { name: "Confirmar cadastro" });
     expect(button).toBeEnabled();
     fetchMock.mockResolvedValueOnce(success());

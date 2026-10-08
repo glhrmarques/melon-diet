@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -190,5 +191,22 @@ func TestAddPatientAcceptsSexOptions(t *testing.T) {
 		if response.Code != http.StatusCreated {
 			t.Fatalf("sex %s: %d %s", sex, response.Code, response.Body)
 		}
+	}
+}
+
+func TestAddPatientPassesTelephoneToDatabase(t *testing.T) {
+	for _, phone := range []string{" +55 (11) 99999-1234 ", "", "   "} {
+		t.Run(fmt.Sprintf("telephone=%q", phone), func(t *testing.T) {
+			tx := &patientTxStub{}
+			encoded, _ := json.Marshal(phone)
+			body := strings.TrimSuffix(validPatientJSON, "}") + `,"telefone":` + string(encoded) + "}"
+			response := patientRequest(&patientDBStub{tx: tx}, "?usuario_id=7", body, patientTestNow)
+			if response.Code != http.StatusCreated {
+				t.Fatalf("expected 201, got %d: %s", response.Code, response.Body)
+			}
+			if tx.insertArgs[6] != strings.TrimSpace(phone) {
+				t.Fatalf("unexpected telephone INSERT argument: %v", tx.insertArgs[6])
+			}
+		})
 	}
 }

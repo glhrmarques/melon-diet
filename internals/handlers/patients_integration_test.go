@@ -78,7 +78,8 @@ func TestPatientPersistence(t *testing.T) {
 		}
 	}
 
-	response := patientRequest(pool, "?usuario_id=7", validPatientJSON, patientTestNow)
+	bodyWithTelephone := strings.TrimSuffix(validPatientJSON, "}") + `,"telefone":" +55 (11) 99999-1234 "}`
+	response := patientRequest(pool, "?usuario_id=7", bodyWithTelephone, patientTestNow)
 	if response.Code != http.StatusCreated {
 		t.Fatalf("expected 201: %d %s", response.Code, response.Body)
 	}
@@ -102,7 +103,7 @@ func TestPatientPersistence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := Patient{ID: created.Patient.ID, NutricionistaID: 3, Nome: "Ana Silva", DataNascimento: "1995-04-20", Sexo: "Feminino", Altura: 168, Peso: 64.5, Email: "ana@example.com"}
+	expected := Patient{ID: created.Patient.ID, NutricionistaID: 3, Nome: "Ana Silva", DataNascimento: "1995-04-20", Sexo: "Feminino", Altura: 168, Peso: 64.5, Telefone: "+55 (11) 99999-1234", Email: "ana@example.com"}
 	if stored != expected || created.Patient != expected {
 		t.Fatalf("incorrect stored or returned patient: stored=%+v response=%+v", stored, created.Patient)
 	}

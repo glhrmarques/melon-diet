@@ -39,6 +39,7 @@ export default function AddPatient() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [email, setEmail] = useState("");
+  const [telephone, setTelephone] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -80,6 +81,7 @@ export default function AddPatient() {
           altura_cm: heightCm,
           peso_kg: weightKg,
           email: email.trim(),
+          telefone: telephone.trim(),
         }),
       });
       const data = await response.json().catch(() => null);
@@ -103,22 +105,29 @@ export default function AddPatient() {
       <UserGreeting nome={usuario.nome} />
       <div className="flex flex-row justify-center gap-6 h-[100%]">
         <div className="w-[60%] p-12">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-8">
-            <path strokeLinejoin="round" strokeLinecap="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
-          </svg>
+          <button
+          type="button"
+          onClick={() => router.push('/home')}
+          className="flex items-center justify-center cursor-pointer min-h-[40px] min-w-[40px] rounded-full bg-[#f1f1f1] mb-4 hover:bg-[#e2e2e2]"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+              <path strokeLinejoin="round" strokeLinecap="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
+            </svg>
+          </button>
 
 
           <p className="text-[32px] font-[500]">Adicionar paciente</p>
           <p className="text-[18px] font-[400] pb-10 text-[#000000]/50">Informe os dados do paciente.</p>
 
           <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="grid grid-cols-3 gap-x-3 gap-y-4">
+            
             <div className="col-span-3 grid grid-cols-2 gap-3">
               <label htmlFor="patient-name" className="sr-only">Nome</label>
               <input
                 id="patient-name"
                 disabled={isSubmitting}
                 type="text"
-                placeholder="Nome"
+                placeholder="Nome completo"
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -137,6 +146,40 @@ export default function AddPatient() {
                 required
                 value={birthDate}
                 onChange={(event) => setBirthDate(event.target.value)}
+                className="
+                w-full border border-[#939393] rounded-[16px] p-3 text-[16px]
+                hover:outline-[1.5] hover:outline-[#000000] cursor-pointer transition-colors
+                focus:outline-[#000000]
+                "
+              />
+            </div>
+
+            {/*Second row*/}
+            <div className="col-span-3 grid grid-cols-2 gap-3">
+              <label htmlFor="patient-email" className="sr-only">E-mail</label>
+              <input
+                id="patient-email"
+                disabled={isSubmitting}
+                type="email"
+                placeholder="E-mail"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="
+                w-full border border-[#939393] rounded-[16px] p-3 text-[16px]
+                hover:outline-[1.5] hover:outline-[#000000] cursor-pointer transition-colors
+                focus:outline-[#000000]
+                "
+              />
+              <label htmlFor="patient-telephone" className="sr-only">Telefone</label>
+              <input
+                id="patient-telephone"
+                disabled={isSubmitting}
+                type="tel"
+                autoComplete="tel"
+                placeholder="Telefone (opcional)"
+                value={telephone}
+                onChange={(event) => setTelephone(event.target.value)}
                 className="
                 w-full border border-[#939393] rounded-[16px] p-3 text-[16px]
                 hover:outline-[1.5] hover:outline-[#000000] cursor-pointer transition-colors
@@ -193,21 +236,6 @@ export default function AddPatient() {
                 onChange={(event) => setWeight(event.target.value)}
                 className="
                 w-full border border-[#939393] rounded-[16px] p-3 text-[16px]
-                hover:outline-[1.5] hover:outline-[#000000] cursor-pointer transition-colors
-                focus:outline-[#000000]
-                "
-              />
-              <label htmlFor="patient-email" className="sr-only">E-mail</label>
-              <input
-                id="patient-email"
-                disabled={isSubmitting}
-                type="email"
-                placeholder="E-mail"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="
-                col-span-3 w-full border border-[#939393] rounded-[16px] p-3 text-[16px]
                 hover:outline-[1.5] hover:outline-[#000000] cursor-pointer transition-colors
                 focus:outline-[#000000]
                 "

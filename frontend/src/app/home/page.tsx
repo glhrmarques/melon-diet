@@ -82,7 +82,7 @@ export default function Home() {
   return (
     <section className="flex flex-col bg-[#ffffff]">
         <UserGreeting nome={usuario.nome} />
-        
+
         <div className="flex justify-between p-6">
             <p className="text-[16px] text-[32px] font-[600]">Meus pacientes</p>
             <button
@@ -100,8 +100,8 @@ export default function Home() {
         {!loadingPatients && !patientsError && patients.length === 0 && (
           <p className="px-6 text-[14px]">Nenhum paciente cadastrado.</p>
         )}
-        
-        <div className="grid grid-cols-6 px-10 mb-3">
+
+        <div className="grid grid-cols-7 px-10 mb-3">
           <p className="text-[12px] font-[600] text-gray-500">Paciente</p>
           <p className="text-[12px] font-[600] text-gray-500">Contato</p>
           <p className="text-[12px] font-[600] text-gray-500">Idade</p>
@@ -111,7 +111,7 @@ export default function Home() {
         </div>
         {patients.map((patient) => (
           <div key={patient.id} className="px-6">
-            <div className="grid grid-cols-6 items-center border border-gray-300 p-3 mb-2 rounded-[16px]">
+            <div className="grid grid-cols-7 items-center border border-gray-300 p-3 mb-2 rounded-[16px]">
               <div className="flex gap-2 items-center">
                 <div className="grid place-items-center w-[32px] h-[32px] bg-gray-200 rounded-full">
                   <p className="text-[14px] font-[700] leading-none text-center">{patient.nome.charAt(0)}</p>
@@ -123,6 +123,12 @@ export default function Home() {
               <p className="text-[14px] font-[400] leading-none">{patient.altura_cm} cm</p>
               <p className="text-[14px] font-[400] leading-none">{patient.peso_kg} kg</p>
               <p className="text-[14px] font-[400] leading-none">{patient.sexo}</p>
+              <button
+                type="button"
+                className="h-[32px] justify-self-end rounded-[12px] bg-gray-950 hover:bg-gray-800 cursor-pointer text-[#ffffff] px-6 text-[14px] font-[500]"
+              >
+                Adicionar
+              </button>
             </div>
           </div>
         ))}

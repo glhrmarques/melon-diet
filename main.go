@@ -25,6 +25,9 @@ func main() {
 	router.POST("/patients", handlers.AddPatient)
 	router.POST("/dietas", handlers.AddDieta)
 	router.POST("/refeicoes", handlers.AddRefeicao)
+	router.GET("/alimentos", handlers.SearchFoods)
+	router.POST("/patients/:pacienteID/plan-meals", handlers.SavePlanMeal)
+	router.GET("/patients/:pacienteID/meal-plans/:dietaID", handlers.GetMealPlan)
 	router.POST("/auth/login", handlers.Login)
 
 	router.Run("localhost:8080")

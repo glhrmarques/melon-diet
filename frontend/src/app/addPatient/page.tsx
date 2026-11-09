@@ -1,5 +1,6 @@
 "use client";
 
+import { BackButton } from "@/components/BackButton";
 import { UserGreeting } from "@/components/UserGreeting";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useRouter } from "next/navigation";
@@ -105,18 +106,10 @@ export default function AddPatient() {
       <UserGreeting nome={usuario.nome} />
       <div className="flex flex-row justify-center gap-6 h-[100%]">
         <div className="w-[60%] p-12">
-          <button
-          type="button"
-          onClick={() => router.push('/home')}
-          className="flex items-center justify-center cursor-pointer min-h-[40px] min-w-[40px] rounded-full bg-[#f1f1f1] mb-4 hover:bg-[#e2e2e2]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
-              <path strokeLinejoin="round" strokeLinecap="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
-            </svg>
-          </button>
+          <BackButton onClick={() => router.push('/home')} />
 
 
-          <p className="text-[32px] font-[500]">Adicionar paciente</p>
+          <p className="mt-4 text-[32px] font-[500]">Adicionar paciente</p>
           <p className="text-[18px] font-[400] pb-10 text-[#000000]/50">Informe os dados do paciente.</p>
 
           <form onSubmit={handleSubmit} aria-busy={isSubmitting} className="grid grid-cols-3 gap-x-3 gap-y-4">

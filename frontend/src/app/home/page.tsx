@@ -125,6 +125,7 @@ export default function Home() {
               <p className="text-[14px] font-[400] leading-none">{patient.sexo}</p>
               <button
                 type="button"
+                onClick={() => router.push(`/meal-plan/${patient.id}`)}
                 className="h-[32px] justify-self-end rounded-[12px] bg-gray-950 hover:bg-gray-800 cursor-pointer text-[#ffffff] px-6 text-[14px] font-[500]"
               >
                 Adicionar

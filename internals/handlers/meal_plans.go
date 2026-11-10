@@ -108,37 +108,68 @@ func planError(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Não foi possível acessar o plano alimentar."})
 }
 
+type planMealInput struct {
+	Periodo    string     `json:"periodo" binding:"required"`
+	Horario    string     `json:"horario" binding:"required"`
+	Observacao string     `json:"observacao" binding:"max=2000"`
+	Alimentos  []mealFood `json:"alimentos" binding:"required,min=1,max=100,dive"`
+}
+
+type planSaveInput struct {
+	UsuarioID int    `json:"usuario_id" binding:"required,gt=0"`
+	DietaID   int    `json:"dieta_id" binding:"gte=0"`
+	PedidoID  string `json:"pedido_id" binding:"required,uuid4"`
+}
+
 func SavePlanMeal(c *gin.Context) {
 	var input struct {
-		UsuarioID  int        `json:"usuario_id" binding:"required,gt=0"`
-		DietaID    int        `json:"dieta_id" binding:"gte=0"`
-		PedidoID   string     `json:"pedido_id" binding:"required,uuid4"`
-		Periodo    string     `json:"periodo" binding:"required"`
-		Horario    string     `json:"horario" binding:"required"`
-		Observacao string     `json:"observacao" binding:"max=2000"`
-		Alimentos  []mealFood `json:"alimentos" binding:"required,min=1,max=100,dive"`
+		planSaveInput
+		planMealInput
 	}
-	pacienteID, err := strconv.Atoi(c.Param("pacienteID"))
-	if err != nil || pacienteID <= 0 || c.ShouldBindJSON(&input) != nil {
+	if c.ShouldBindJSON(&input) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Confira os dados da refeição."})
 		return
 	}
-	label, validPeriod := mealPlanPeriods[input.Periodo]
-	hour, timeErr := time.Parse("15:04", input.Horario)
-	if !validPeriod || timeErr != nil || hour.Format("15:04") != input.Horario {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Selecione o nome e o horário da refeição."})
+	savePlan(c, input.planSaveInput, []planMealInput{input.planMealInput})
+}
+
+func SaveMealPlan(c *gin.Context) {
+	var input struct {
+		planSaveInput
+		Refeicoes []planMealInput `json:"refeicoes" binding:"required,min=1,max=100,dive"`
+	}
+	if c.ShouldBindJSON(&input) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Confira os dados da refeição."})
 		return
 	}
-	for i := range input.Alimentos {
-		food := &input.Alimentos[i]
-		if food.TacoID > len(tacoFoods) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Confira o alimento selecionado."})
+	savePlan(c, input.planSaveInput, input.Refeicoes)
+}
+
+func savePlan(c *gin.Context, input planSaveInput, meals []planMealInput) {
+	pacienteID, err := strconv.Atoi(c.Param("pacienteID"))
+	if err != nil || pacienteID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Confira os dados da refeição."})
+		return
+	}
+	for i := range meals {
+		meal := &meals[i]
+		_, validPeriod := mealPlanPeriods[meal.Periodo]
+		hour, timeErr := time.Parse("15:04", meal.Horario)
+		if !validPeriod || timeErr != nil || hour.Format("15:04") != meal.Horario {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Selecione o nome e o horário da refeição."})
 			return
 		}
-		food.Nome = tacoFoods[food.TacoID-1].Nome
-		food.PesoGramas = food.Quantidade
-		if food.Medida != "g" {
-			food.PesoGramas *= food.GramasPorMedida
+		for i := range meal.Alimentos {
+			food := &meal.Alimentos[i]
+			if food.TacoID > len(tacoFoods) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Confira o alimento selecionado."})
+				return
+			}
+			food.Nome = tacoFoods[food.TacoID-1].Nome
+			food.PesoGramas = food.Quantidade
+			if food.Medida != "g" {
+				food.PesoGramas *= food.GramasPorMedida
+			}
 		}
 	}
 
@@ -189,23 +220,30 @@ func SavePlanMeal(c *gin.Context) {
 		return
 	}
 
-	var mealID int
-	err = tx.QueryRow(ctx, `
+	for i, meal := range meals {
+		// The first meal identifies the entire atomic save when a request is retried.
+		var requestID *string
+		if i == 0 {
+			requestID = &input.PedidoID
+		}
+		var mealID int
+		err = tx.QueryRow(ctx, `
 		INSERT INTO refeicao (dieta_id, periodo, descricao, horario, pedido_id, observacao)
 		VALUES ($1, $2, $3, $4::text::time, $5::text::uuid, $6) RETURNING id`,
-		planID, input.Periodo, label, input.Horario, input.PedidoID, strings.TrimSpace(input.Observacao)).Scan(&mealID)
-	if err != nil {
-		planError(c, err)
-		return
-	}
-	for i, food := range input.Alimentos {
-		_, err = tx.Exec(ctx, `
-			INSERT INTO refeicao_alimento (refeicao_id, ordem, taco_id, nome, medida, quantidade, peso_gramas)
-			VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::numeric, 0))`,
-			mealID, i, food.TacoID, food.Nome, food.Medida, food.Quantidade, food.PesoGramas)
+			planID, meal.Periodo, mealPlanPeriods[meal.Periodo], meal.Horario, requestID, strings.TrimSpace(meal.Observacao)).Scan(&mealID)
 		if err != nil {
 			planError(c, err)
 			return
+		}
+		for i, food := range meal.Alimentos {
+			_, err = tx.Exec(ctx, `
+			INSERT INTO refeicao_alimento (refeicao_id, ordem, taco_id, nome, medida, quantidade, peso_gramas)
+			VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::numeric, 0))`,
+				mealID, i, food.TacoID, food.Nome, food.Medida, food.Quantidade, food.PesoGramas)
+			if err != nil {
+				planError(c, err)
+				return
+			}
 		}
 	}
 	if err = tx.Commit(ctx); err != nil {

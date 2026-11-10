@@ -17,6 +17,7 @@ import (
 )
 
 type Patient struct {
+	DietaID         int     `json:"dieta_id,omitempty"`
 	ID              int     `json:"id"`
 	NutricionistaID int     `json:"nutricionista_id"`
 	DataNascimento  string  `json:"data_nascimento"`
@@ -40,7 +41,9 @@ func ListPatients(c *gin.Context) {
 
 	rows, err := db.Pool.Query(c.Request.Context(), `
 		SELECT p.id, p.nutricionista_id, COALESCE(to_char(p.data_nascimento, 'YYYY-MM-DD'), ''), p.nome,
-		       p.sexo, p.altura_cm, p.peso_kg, COALESCE(p.telefone, ''), COALESCE(p.email, '')
+		       p.sexo, p.altura_cm, p.peso_kg, COALESCE(p.telefone, ''), COALESCE(p.email, ''),
+		       COALESCE((SELECT max(d.id) FROM dieta d
+		                 WHERE d.paciente_id = p.id AND d.nutricionista_id = p.nutricionista_id), 0)
 		FROM pacientes p
 		INNER JOIN nutricionistas n ON n.id = p.nutricionista_id
 		WHERE n.usuario_id = $1
@@ -67,6 +70,7 @@ func ListPatients(c *gin.Context) {
 			&patient.Peso,
 			&patient.Telefone,
 			&patient.Email,
+			&patient.DietaID,
 		); err != nil {
 			log.Printf("Falha ao ler paciente: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao buscar pacientes"})

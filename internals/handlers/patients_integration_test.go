@@ -61,6 +61,7 @@ func TestPatientPersistence(t *testing.T) {
   nome varchar NOT NULL, data_nascimento date, sexo varchar,
   altura_cm numeric, peso_kg numeric, telefone varchar
  );
+ CREATE TABLE dieta (id integer PRIMARY KEY, paciente_id integer REFERENCES pacientes(id), nutricionista_id integer REFERENCES nutricionistas(id));
  INSERT INTO nutricionistas (id, usuario_id) VALUES (3, 7), (4, 8);
  INSERT INTO pacientes (nutricionista_id, nome, data_nascimento, sexo, altura_cm, peso_kg, telefone)
  VALUES (4, 'Existing patient', '1990-01-01', 'Masculino', 175, 70, '11999999999');`)

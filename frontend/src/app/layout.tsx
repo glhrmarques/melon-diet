@@ -11,7 +11,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
     >
-      <body className="mx-auto max-w-screen-xl">{children}</body>
+      <body className="mx-auto max-w-(--breakpoint-2xl)">{children}</body>
     </html>
   );
 }

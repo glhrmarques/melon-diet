@@ -7,6 +7,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 type Patient = {
   id: number;
+  dieta_id?: number;
   nutricionista_id: number;
   data_nascimento: string;
   nome: string;
@@ -125,10 +126,10 @@ export default function Home() {
               <p className="text-[14px] font-[400] leading-none">{patient.sexo}</p>
               <button
                 type="button"
-                onClick={() => router.push(`/meal-plan/${patient.id}`)}
-                className="h-[32px] justify-self-end rounded-[12px] bg-gray-950 hover:bg-gray-800 cursor-pointer text-[#ffffff] px-6 text-[14px] font-[500]"
+                onClick={() => router.push(`/meal-plan/${patient.id}${patient.dieta_id ? `?plano=${patient.dieta_id}` : ""}`)}
+                className={`h-8 justify-self-end rounded-xl px-6 text-sm font-medium cursor-pointer ${patient.dieta_id ? "border border-black bg-white hover:bg-neutral-100" : "bg-gray-950 text-white hover:bg-gray-800"}`}
               >
-                Adicionar
+                {patient.dieta_id ? "Ver dieta" : "Adicionar"}
               </button>
             </div>
           </div>

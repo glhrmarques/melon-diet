@@ -50,9 +50,8 @@ export default function Login() {
 	}
 
   return (
-        <section className="h-screen grid grid-cols-[40%_60%]">
+        <section className="grid flex-1 grid-cols-[40%_60%]">
           <div className="bg-[#ffffff] flex flex-col justify-center items-center gap-2 px-30">
-            <div className="w-4 h-4 bg-[#000000]"></div>
             <h1 className="text-[32px] font-[700]">Acesso nutricionista</h1>
             <p className="text-[18px] font-[400] text-content-secondary">Dieta fácil de seguir e seja o orgulho do nutri.</p>
 			<form

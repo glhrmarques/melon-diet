@@ -29,3 +29,19 @@ allow household measures with no recorded weight.
 ```sh
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -1 -f migrations/003_optional_meal_food_weight.sql
 ```
+
+Apply `004_allow_multiple_diets_per_nutritionist.sql` to remove the legacy
+unique constraint on `dieta.nutricionista_id` so a nutritionist can create
+more than one plan. Existing plans and the nutritionist foreign key are
+preserved.
+
+```sh
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -1 -f migrations/004_allow_multiple_diets_per_nutritionist.sql
+```
+
+Apply `005_allow_multiple_meals_per_diet.sql` to allow several meals in
+one plan on databases with the legacy `refeicao.dieta_id` unique constraint.
+
+```sh
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -1 -f migrations/005_allow_multiple_meals_per_diet.sql
+```

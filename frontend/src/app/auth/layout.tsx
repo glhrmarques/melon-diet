@@ -1,5 +1,12 @@
-export default function RootLayout({ children }: LayoutProps<"/">) {
+import type { ReactNode } from "react";
+
+import { UserGreeting } from "@/components/UserGreeting";
+
+export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div>{children}</div>
+    <div className="flex min-h-dvh flex-col">
+      <UserGreeting />
+      {children}
+    </div>
   );
 }

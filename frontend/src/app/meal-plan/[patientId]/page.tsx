@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { BackButton } from "@/components/BackButton";
+import { BottomBar } from "@/components/BottomBar";
+import { MealSummaryAccordion } from "@/components/MealSummaryAccordion";
 import { UserGreeting } from "@/components/UserGreeting";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
@@ -51,6 +53,10 @@ type Meal = {
   alimentos: SavedFood[];
 };
 
+function compareMealTimes(a: Meal, b: Meal) {
+  return a.horario.localeCompare(b.horario);
+}
+
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, options);
   const data = await response.json();
@@ -66,27 +72,14 @@ function FoodSummary({ foods }: { foods: SavedFood[] }) {
   return (
     <ul>
       {foods.map((food, index) => (
-        <li key={index} className="border-b border-black/20 py-4 text-sm">
-          <span className="font-medium">{food.nome}</span>{" "}
-          {food.quantidade} {food.medida}
+        <li key={index} className="flex items-start justify-between gap-4 border-b border-black/10 py-4 text-base first:pt-0 last:border-b-0">
+          <span className="min-w-0 font-medium">{food.nome}</span>{" "}
+          <span className="shrink-0 text-right">
+            {food.quantidade} {food.medida === "unidade" ? "Unidade(s)" : food.medida}
+          </span>
         </li>
       ))}
     </ul>
-  );
-}
-
-function SaveBar({ children, disabled, onClick }: {
-  children: React.ReactNode;
-  disabled: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <footer className="sticky bottom-0 z-20 flex shrink-0 justify-end border-t border-black/20 bg-white px-6 py-6 md:px-10">
-      <button type={onClick ? "button" : "submit"} onClick={onClick} disabled={disabled}
-        className="h-12 w-full max-w-[304px] cursor-pointer rounded-2xl bg-black px-4 font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60">
-        {children}
-      </button>
-    </footer>
   );
 }
 
@@ -241,7 +234,7 @@ function MealEditor({ onSaved, onBack }: {
             value={notes} onChange={(event) => setNotes(event.target.value)} />
         </aside>
       </div>
-      <SaveBar disabled={foods.length === 0}>Salvar refeição</SaveBar>
+      <BottomBar type="submit" disabled={foods.length === 0}>Salvar refeição</BottomBar>
     </form>
   );
 }
@@ -269,7 +262,7 @@ function PlanSummary({ base, userId, planId, draft, saving, saveError, onSave, o
     return () => controller.abort();
   }, [base, planId, userId]);
 
-  const visibleMeals = planId && !meals ? null : [...(meals ?? []), ...draft];
+  const visibleMeals = planId && !meals ? null : [...(meals ?? []), ...draft].sort(compareMealTimes);
   const showSave = !planId || draft.length > 0;
 
   return (
@@ -293,24 +286,24 @@ function PlanSummary({ base, userId, planId, draft, saving, saveError, onSave, o
           </div>
           {error ? <p role="alert" className="text-red-700">{error}</p> : !visibleMeals && <p role="status">Carregando plano...</p>}
         </section>
-        <aside className="flex min-h-0 min-w-0 flex-col gap-10 bg-[#f5f5f5] p-6 md:p-10 md:pt-[104px]">
-          <h2 id="plan-summary" className="shrink-0 text-2xl font-medium text-[#545454]">Resumo do plano</h2>
-          <div role="region" aria-labelledby="plan-summary" tabIndex={0}
-            className="max-h-[60dvh] space-y-10 overflow-y-auto md:max-h-none">
+        <aside tabIndex={0} aria-labelledby="plan-summary"
+          className="flex max-h-[60dvh] min-h-0 min-w-0 flex-col gap-10 overflow-y-auto bg-[#f5f5f5] p-6 md:max-h-none md:p-10 md:pt-[104px]">
+          <h2 id="plan-summary" className="shrink-0 text-2xl font-medium text-[#545454]">Resumo do Plano</h2>
+          <div role="region" aria-labelledby="plan-summary"
+            className="shrink-0 space-y-10">
             {visibleMeals?.map((meal) => (
-              <section key={meal.id}>
-                <h3 className="border-b border-black/20 pb-4 font-semibold">{periods[meal.periodo]}</h3>
+              <MealSummaryAccordion key={meal.id} title={periods[meal.periodo]}>
                 <FoodSummary foods={meal.alimentos} />
                 {meal.observacao && <p className="mt-3 whitespace-pre-wrap text-sm">{meal.observacao}</p>}
-              </section>
+              </MealSummaryAccordion>
             ))}
           </div>
         </aside>
       </div>
       {saveError && <p role="alert" className="px-6 py-2 text-sm text-red-700">{saveError}</p>}
-      {showSave && <SaveBar disabled={saving || !visibleMeals || draft.length === 0} onClick={onSave}>
+      {showSave && <BottomBar disabled={saving || !visibleMeals || draft.length === 0} onClick={onSave}>
         {saving ? "Salvando..." : "Salvar plano alimentar"}
-      </SaveBar>}
+      </BottomBar>}
     </div>
   );
 }
@@ -409,7 +402,7 @@ function PlanFlow({ userId, name, base, planId, startEditing, onHome, onView }: 
         </section>
       ) : editing ? (
         <MealEditor onSaved={(meal) => {
-          setDraft((current) => [...current, { ...meal, id: -(current.length + 1) }]);
+          setDraft((current) => [...current, { ...meal, id: -(current.length + 1) }].sort(compareMealTimes));
           setEditing(false);
         }} onBack={() => planId || draft.length ? setEditing(false) : onHome()} />
       ) : (

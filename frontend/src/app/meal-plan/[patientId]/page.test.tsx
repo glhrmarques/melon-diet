@@ -48,9 +48,17 @@ it("keeps meals in a draft until the plan is saved", async () => {
   const card = screen.getByRole("article");
   expect(within(card).getByText("07:30")).toBeVisible();
   expect(within(card).getByText("Café da manhã")).toBeVisible();
-  const summary = screen.getByRole("region", { name: "Resumo do plano" });
+  const summary = screen.getByRole("region", { name: /Resumo do plano/i });
+  const toggle = within(summary).getByRole("button", { name: "Café da manhã" });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(within(summary).getByText("Pão, trigo, francês")).not.toBeVisible();
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
   expect(within(summary).getByText("Pão, trigo, francês")).toBeVisible();
-  expect(within(summary).getByRole("listitem")).toHaveTextContent("2 unidade");
+  expect(within(summary).getByRole("listitem")).toHaveTextContent("2 Unidade(s)");
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(within(summary).getByText("Pão, trigo, francês")).not.toBeVisible();
 
   fireEvent.click(screen.getByRole("button", { name: "Adicionar refeição" }));
   expect(screen.getByLabelText("Nome da refeição")).toHaveValue("");
@@ -88,4 +96,41 @@ it("keeps meals in a draft until the plan is saved", async () => {
   navigation.query = "plano=15";
   rerender(<MealPlanPage />);
   expect(await screen.findByText("07:30")).toBeVisible();
+});
+
+it("orders added meals by their clock time rather than meal type or insertion order", async () => {
+  vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockImplementation(async () =>
+    Response.json({ alimentos: [{ id: 2, nome: "Arroz" }] })
+  ));
+  render(<MealPlanPage />);
+  for (const [period, time] of [
+    ["almoco", "15:00"], ["cafe_da_manha", "07:00"],
+    ["jantar", "00:00"], ["lanche_tarde", "23:00"],
+  ]) {
+    const add = screen.queryByRole("button", { name: "Adicionar refeição" });
+    if (add) fireEvent.click(add);
+    fireEvent.change(screen.getByLabelText("Nome da refeição"), { target: { value: period } });
+    fireEvent.change(screen.getByLabelText("Horário da refeição"), { target: { value: time } });
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "arroz" } });
+    fireEvent.click(await screen.findByRole("button", { name: "Arroz" }));
+    fireEvent.change(screen.getByLabelText("Quantidade"), { target: { value: "100" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar refeição" }));
+  }
+  expect(screen.getAllByRole("article").map((card) => card.querySelector("time")?.textContent))
+    .toEqual(["00:00", "07:00", "15:00", "23:00"]);
+  expect(within(screen.getByRole("region", { name: /Resumo do plano/i }))
+    .getAllByRole("heading").map((heading) => heading.textContent))
+    .toEqual(["Jantar", "Café da manhã", "Almoço", "Café da tarde"]);
+});
+
+it("orders saved meals returned out of order", async () => {
+  navigation.query = "plano=15";
+  vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(Response.json({ refeicoes: [
+    { id: 1, horario: "15:00", periodo: "almoco", observacao: "", alimentos: [] },
+    { id: 2, horario: "07:00", periodo: "cafe_da_manha", observacao: "", alimentos: [] },
+  ] })));
+  render(<MealPlanPage />);
+  await screen.findByText("07:00");
+  expect(screen.getAllByRole("article").map((card) => card.querySelector("time")?.textContent))
+    .toEqual(["07:00", "15:00"]);
 });
